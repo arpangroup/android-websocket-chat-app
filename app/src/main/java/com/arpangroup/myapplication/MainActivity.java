@@ -1,6 +1,8 @@
 package com.arpangroup.myapplication;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -8,9 +10,16 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.arpangroup.myapplication.adapter.MessageAdapterV1;
 import com.arpangroup.myapplication.models.ChatMessage;
+import com.google.gson.Gson;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.schedulers.Schedulers;
 import okhttp3.WebSocket;
 import ua.naiksoftware.stomp.Stomp;
 import ua.naiksoftware.stomp.StompClient;
@@ -24,6 +33,10 @@ public class MainActivity extends AppCompatActivity {
     StompClient mStompClient;
     EditText etMessage;
     Button btnSend;
+    RecyclerView recyclerView;
+
+    List<ChatMessage> mMessages;
+    MessageAdapterV1 messageAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,10 +44,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         settingSession = new SettingSession(this);
         getSupportActionBar().setTitle("Chat with " + settingSession.getSendTo());
+        compositeDisposable = new CompositeDisposable();
         etMessage = findViewById(R.id.et_message);
         btnSend = findViewById(R.id.btn_send);
         mUserName = settingSession.getUserName();
         baseApp = BaseApp.instance();
+        mMessages = new ArrayList<>();
+        messageAdapter = new MessageAdapterV1(mMessages, mUserName);
+        recyclerView = findViewById(R.id.recyclerView);
+        recyclerView.setAdapter(messageAdapter);
 
         //this.subscribe();
         btnSend.setOnClickListener(view -> {
@@ -57,9 +75,47 @@ public class MainActivity extends AppCompatActivity {
                 .setContent("hello");
         Log.d("______BASE_APP_SEND______: ", chatMessage.json());
 
-        mStompClient.topic("/topic/public").subscribe(message -> {
-            Log.d(TAG, "Received public message: " + message.getPayload());
-        });
+
+//        mStompClient.topic("/topic/public").subscribe(message -> {
+//            Log.d(TAG, "Received public message: " + message.getPayload());
+//            try{
+//                ChatMessage chatMessageObj = new Gson().fromJson(message.getPayload(), ChatMessage.class);
+//                addChatToList(chatMessageObj);
+//            }catch (Exception e){
+//                e.printStackTrace();
+//            }
+//
+//        });
+
+//        compositeDisposable.add(
+//                mStompClient.topic("/topic/public")
+//                        .subscribeOn(Schedulers.io())
+//                        .observeOn(AndroidSchedulers.mainThread())
+//                        .subscribe(stompMessage -> {
+//                            Log.d(TAG, "Received public message: " + stompMessage.getPayload());
+//                            try{
+//                                ChatMessage chatMessageObj = new Gson().fromJson(stompMessage.getPayload(), ChatMessage.class);
+//                                messageAdapter.insertMessage(chatMessageObj);
+//                            }catch (Exception e){
+//                                e.printStackTrace();
+//                            }
+//                        }, Throwable::printStackTrace)
+//        );
+
+        compositeDisposable.add(
+                mStompClient.topic("/topic/messages/" + mUserName)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(stompMessage -> {
+                            Log.d(TAG, "Received public message: " + stompMessage.getPayload());
+                            try{
+                                ChatMessage chatMessageObj = new Gson().fromJson(stompMessage.getPayload(), ChatMessage.class);
+                                messageAdapter.insertMessage(chatMessageObj);
+                            }catch (Exception e){
+                                e.printStackTrace();
+                            }
+                        }, Throwable::printStackTrace)
+        );
 
 //        client.topic("/topic/messages/"+mUserName).subscribe(message -> {
 //            Log.d(TAG, "Received private message: " + message.getPayload());
@@ -106,6 +162,8 @@ public class MainActivity extends AppCompatActivity {
 //        });
     }
 
+
+
     private void sendMessage() {
         Log.d(TAG, "Inside sendMessage....");
         ChatMessage chatMessage = new ChatMessage()
@@ -120,6 +178,7 @@ public class MainActivity extends AppCompatActivity {
 //                error -> Log.e(TAG, "Encountered error while sending data!", error)
 //        );
         mStompClient.send("/app/chat/"+settingSession.getSendTo(), chatMessage.json()).subscribe();
+        messageAdapter.insertMessage(chatMessage);
         //etMessage.setText("");
     }
 
@@ -129,5 +188,11 @@ public class MainActivity extends AppCompatActivity {
             compositeDisposable.dispose();
         }
         compositeDisposable = new CompositeDisposable();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        compositeDisposable.clear();
     }
 }
