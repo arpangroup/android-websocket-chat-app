@@ -1,10 +1,17 @@
 package com.arpangroup.myapplication.models;
 
+import androidx.core.util.TimeUtils;
+
+import com.arpangroup.myapplication.utils.DateTimeUtil;
 import com.google.gson.Gson;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 public class ChatMessage {
     private String content;
     private String sender;
+    private Long timestamp;
     private MessageType type;
 
     public static enum MessageType {
@@ -49,5 +56,10 @@ public class ChatMessage {
                 ", sender='" + sender + '\'' +
                 ", type=" + type +
                 '}';
+    }
+
+
+    public String getTime(){
+        return DateTimeUtil.getTimeInhh_mm_aFormat(timestamp);
     }
 }

@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.arpangroup.myapplication.adapter.MessageAdapterV1;
@@ -31,6 +33,8 @@ public class MainActivity extends AppCompatActivity {
     BaseApp baseApp;
     private CompositeDisposable compositeDisposable;
     StompClient mStompClient;
+    TextView title;
+    ImageView back;
     EditText etMessage;
     Button btnSend;
     RecyclerView recyclerView;
@@ -43,7 +47,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         settingSession = new SettingSession(this);
-        getSupportActionBar().setTitle("Chat with " + settingSession.getSendTo());
+        title = findViewById(R.id.title);
+        back = findViewById(R.id.back);
+        title.setText(settingSession.getUserName());
+        back.setOnClickListener(view -> onBackPressed());
+       // getSupportActionBar().setTitle("Chat with " + settingSession.getSendTo());
+        getSupportActionBar().hide();
         compositeDisposable = new CompositeDisposable();
         etMessage = findViewById(R.id.et_message);
         btnSend = findViewById(R.id.btn_send);
@@ -111,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
                             try{
                                 ChatMessage chatMessageObj = new Gson().fromJson(stompMessage.getPayload(), ChatMessage.class);
                                 messageAdapter.insertMessage(chatMessageObj);
+                                recyclerView.scrollToPosition(messageAdapter.getItemCount() - 1);
                             }catch (Exception e){
                                 e.printStackTrace();
                             }
@@ -179,7 +189,8 @@ public class MainActivity extends AppCompatActivity {
 //        );
         mStompClient.send("/app/chat/"+settingSession.getSendTo(), chatMessage.json()).subscribe();
         messageAdapter.insertMessage(chatMessage);
-        //etMessage.setText("");
+        recyclerView.scrollToPosition(messageAdapter.getItemCount() - 1);
+        etMessage.setText("");
     }
 
 

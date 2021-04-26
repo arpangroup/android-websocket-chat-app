@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.arpangroup.myapplication.databinding.ItemSenderBinding;
 import com.arpangroup.myapplication.databinding.MyMessageBinding;
 import com.arpangroup.myapplication.databinding.TheirMessageBinding;
 import com.arpangroup.myapplication.databinding.UserConnectedBinding;
@@ -59,7 +60,7 @@ public class MessageAdapterV1 extends RecyclerView .Adapter{
             case VIEW_TYPE_USER_CONNECTED:
                 return new UserConnectedViewHolder(UserConnectedBinding.inflate(layoutInflater, parent, false));
             case VIEW_TYPE_MY_MESSAGE:
-                return new MyMessageViewHolder(MyMessageBinding.inflate(layoutInflater, parent, false));
+                return new MyMessageViewHolder(ItemSenderBinding.inflate(layoutInflater, parent, false));
             case VIEW_TYPE_THERE_MESSAGE:
                 return new ThereMessageViewHolder(TheirMessageBinding.inflate(layoutInflater, parent, false));
             default:
@@ -90,9 +91,9 @@ public class MessageAdapterV1 extends RecyclerView .Adapter{
         }
     }
     public static class MyMessageViewHolder extends RecyclerView.ViewHolder{
-        public MyMessageBinding binding;
+        public ItemSenderBinding binding;
 
-        public MyMessageViewHolder(MyMessageBinding binding) {
+        public MyMessageViewHolder(ItemSenderBinding binding) {
             super(binding.getRoot());
             this.binding = binding;
         }
